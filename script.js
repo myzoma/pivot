@@ -52,7 +52,7 @@ class PivotPointsIndicator {
 
     async getTopSymbols() {
         try {
-            const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+            const response = await fetch('https://api1.binance.com/api/v3/ticker/24hr');
             const data = await response.json();
             
             return data
@@ -101,7 +101,7 @@ class PivotPointsIndicator {
 
         try {
             const response = await fetch(
-                `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
+                `https://api1.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
             );
             return await response.json();
         } catch (error) {
