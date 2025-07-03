@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مؤشر نقاط الارتكاز - Binance</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>مؤشر نقاط الارتكاز والانعكاسات</h1>
+            <div class="controls">
+                <select id="timeframe">
+                    <option value="1h">1 ساعة</option>
+                    <option value="4h" selected>4 ساعات</option>
+                    <option value="1d">1 يوم</option>
+                </select>
+                <div class="status">
+                    <span id="lastUpdate">آخر تحديث: --</span>
+                    <div class="loading" id="loading">جاري التحديث...</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>إجمالي العملات</h3>
+                <span id="totalCoins">0</span>
+            </div>
+            <div class="stat-card">
+                <h3>إشارات صعود</h3>
+                <span id="bullishSignals" class="bullish">0</span>
+            </div>
+            <div class="stat-card">
+                <h3>إشارات هبوط</h3>
+                <span id="bearishSignals" class="bearish">0</span>
+            </div>
+        </div>
+
+        <div class="grid" id="cryptoGrid">
+            <!-- البطاقات ستظهر هنا -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
