@@ -1,4 +1,275 @@
-class PivotPointsIndicator {
+// إضافة وظائف تحليل نقاط الارتكاز والمستويات
+class PivotAnalyzer {
+    constructor() {
+        this.pivotLevels = {};
+    }
+
+    // حساب نقاط الارتكاز والمستويات
+    calculatePivotLevels(symbol, currentPrice, high24h, low24h, volume) {
+        // حساب النقطة المحورية الأساسية
+        const pivot = (high24h + low24h + currentPrice) / 3;
+        
+        // حساب مستويات المقاومة والدعم
+        const r1 = (2 * pivot) - low24h;
+        const s1 = (2 * pivot) - high24h;
+        const r2 = pivot + (high24h - low24h);
+        const s2 = pivot - (high24h - low24h);
+        const r3 = high24h + 2 * (pivot - low24h);
+        const s3 = low24h - 2 * (high24h - pivot);
+
+        // تحديد الموقع الحالي
+        const position = this.determinePosition(currentPrice, pivot, r1, r2, r3, s1, s2, s3);
+        
+        // تحديد النقطة التالية المتوقعة
+        const nextTarget = this.getNextTarget(currentPrice, position, {pivot, r1, r2, r3, s1, s2, s3});
+        
+        // حساب قوة المستوى
+        const levelStrength = this.calculateLevelStrength(currentPrice, {pivot, r1, r2, r3, s1, s2, s3}, volume);
+
+        return {
+            pivot,
+            resistance: { r1, r2, r3 },
+            support: { s1, s2, s3 },
+            currentPosition: position,
+            nextTarget,
+            levelStrength,
+            distanceToNext: this.calculateDistance(currentPrice, nextTarget.price),
+            recommendation: this.getRecommendation(position, levelStrength, nextTarget)
+        };
+    }
+
+    // تحديد موقع السعر الحالي
+    determinePosition(price, pivot, r1, r2, r3, s1, s2, s3) {
+        if (price >= r3) return { zone: 'فوق المقاومة الثالثة', level: 'R3', strength: 'قوي جداً', direction: 'صعود' };
+        if (price >= r2) return { zone: 'بين R2 و R3', level: 'R2-R3', strength: 'قوي', direction: 'صعود' };
+        if (price >= r1) return { zone: 'بين R1 و R2', level: 'R1-R2', strength: 'متوسط', direction: 'صعود' };
+        if (price >= pivot) return { zone: 'بين المحور و R1', level: 'P-R1', strength: 'ضعيف', direction: 'صعود' };
+        if (price >= s1) return { zone: 'بين S1 والمحور', level: 'S1-P', strength: 'ضعيف', direction: 'هبوط' };
+        if (price >= s2) return { zone: 'بين S2 و S1', level: 'S2-S1', strength: 'متوسط', direction: 'هبوط' };
+        if (price >= s3) return { zone: 'بين S3 و S2', level: 'S3-S2', strength: 'قوي', direction: 'هبوط' };
+        return { zone: 'تحت الدعم الثالث', level: 'S3', strength: 'قوي جداً', direction: 'هبوط' };
+    }
+
+    // تحديد الهدف التالي
+    getNextTarget(price, position, levels) {
+        const { pivot, r1, r2, r3, s1, s2, s3 } = levels;
+        
+        switch(position.level) {
+            case 'R3':
+                return { price: r3 * 1.05, type: 'مقاومة ممتدة', probability: 30 };
+            case 'R2-R3':
+                return { price: r3, type: 'مقاومة ثالثة', probability: 70 };
+            case 'R1-R2':
+                return { price: r2, type: 'مقاومة ثانية', probability: 80 };
+            case 'P-R1':
+                return { price: r1, type: 'مقاومة أولى', probability: 85 };
+            case 'S1-P':
+                return { price: pivot, type: 'نقطة محورية', probability: 85 };
+            case 'S2-S1':
+                return { price: s1, type: 'دعم أول', probability: 80 };
+            case 'S3-S2':
+                return { price: s2, type: 'دعم ثاني', probability: 70 };
+            case 'S3':
+                return { price: s3 * 0.95, type: 'دعم ممتد', probability: 30 };
+            default:
+                return { price: pivot, type: 'نقطة محورية', probability: 50 };
+        }
+    }
+
+    // حساب المسافة إلى الهدف التالي
+    calculateDistance(currentPrice, targetPrice) {
+        const distance = Math.abs(targetPrice - currentPrice);
+        const percentage = (distance / currentPrice) * 100;
+        
+        return {
+            absolute: distance,
+            percentage: percentage,
+            direction: targetPrice > currentPrice ? 'صعود' : 'هبوط',
+            timeEstimate: this.estimateTimeToTarget(percentage)
+        };
+    }
+
+    // تقدير الوقت للوصول للهدف
+    estimateTimeToTarget(percentage) {
+        if (percentage < 1) return 'أقل من ساعة';
+        if (percentage < 3) return '1-6 ساعات';
+        if (percentage < 5) return '6-24 ساعة';
+        if (percentage < 10) return '1-3 أيام';
+        return 'أكثر من 3 أيام';
+    }
+
+    // حساب قوة المستوى
+    calculateLevelStrength(price, levels, volume) {
+        const { pivot, r1, r2, r3, s1, s2, s3 } = levels;
+        const allLevels = [s3, s2, s1, pivot, r1, r2, r3];
+        
+        // العثور على أقرب مستوى
+        const closestLevel = allLevels.reduce((closest, level) => {
+            return Math.abs(level - price) < Math.abs(closest - price) ? level : closest;
+        });
+        
+        const distanceToLevel = Math.abs(price - closestLevel) / price * 100;
+        
+        // حساب القوة بناءً على المسافة والحجم
+        let strength = 100 - (distanceToLevel * 10);
+        
+        // تعديل القوة بناءً على الحجم
+        if (volume > 1000000) strength += 10;
+        else if (volume < 100000) strength -= 10;
+        
+        return Math.max(0, Math.min(100, strength));
+    }
+
+    // الحصول على التوصية
+    getRecommendation(position, levelStrength, nextTarget) {
+        const recommendations = [];
+        
+        // توصيات بناءً على الموقع
+        if (position.direction === 'صعود' && position.strength === 'قوي جداً') {
+            recommendations.push('⚠️ منطقة مقاومة قوية - احذر من الانعكاس');
+        } else if (position.direction === 'هبوط' && position.strength === 'قوي جداً') {
+            recommendations.push('⚠️ منطقة دعم قوية - احذر من الارتداد');
+        }
+        
+        // توصيات بناءً على قوة المستوى
+        if (levelStrength > 80) {
+            recommendations.push('🎯 مستوى قوي - فرصة جيدة للتداول');
+        } else if (levelStrength < 40) {
+            recommendations.push('⚡ مستوى ضعيف - قد يتم كسره بسهولة');
+        }
+        
+        // توصيات بناءً على الهدف التالي
+        if (nextTarget.probability > 80) {
+            recommendations.push(`📈 احتمالية عالية للوصول إلى ${nextTarget.type}`);
+        }
+        
+        return recommendations.length > 0 ? recommendations : ['📊 راقب حركة السعر عند المستويات الحالية'];
+    }
+
+    // تحديث دالة تحليل العملة لتشمل تحليل نقاط الارتكاز
+    async analyzeCoinWithPivots(symbol) {
+        try {
+            // الحصول على بيانات السعر
+            const priceData = await this.getPriceData(symbol);
+            const { price, change, high24h, low24h, volume } = priceData;
+            
+            // تحليل نقاط الارتكاز
+            const pivotAnalysis = this.calculatePivotLevels(symbol, price, high24h, low24h, volume);
+            
+            // تحليل الإشارة العادي
+            const signalAnalysis = await this.analyzeSignal(symbol);
+            
+            return {
+                ...signalAnalysis,
+                pivotAnalysis,
+                enhanced: true
+            };
+            
+        } catch (error) {
+            console.error(`خطأ في تحليل ${symbol}:`, error);
+            return null;
+        }
+    }
+}
+
+// تحديث عرض تفاصيل العملة لتشمل تحليل نقاط الارتكاز
+function createEnhancedCoinDetails(coin) {
+    const pivotInfo = coin.pivotAnalysis ? `
+        <div class="detail-section">
+            <h3>🎯 تحليل نقاط الارتكاز</h3>
+            <div class="pivot-analysis">
+                <div class="current-position">
+                    <h4>الموقع الحالي</h4>
+                    <div class="position-info">
+                        <span class="zone">${coin.pivotAnalysis.currentPosition.zone}</span>
+                        <span class="strength ${coin.pivotAnalysis.currentPosition.strength.replace(' ', '-')}">${coin.pivotAnalysis.currentPosition.strength}</span>
+                    </div>
+                </div>
+                
+                <div class="pivot-levels">
+                    <h4>المستويات الرئيسية</h4>
+                    <div class="levels-grid">
+                        <div class="level resistance">R3: $${coin.pivotAnalysis.resistance.r3.toFixed(4)}</div>
+                        <div class="level resistance">R2: $${coin.pivotAnalysis.resistance.r2.toFixed(4)}</div>
+                        <div class="level resistance">R1: $${coin.pivotAnalysis.resistance.r1.toFixed(4)}</div>
+                        <div class="level pivot">المحور: $${coin.pivotAnalysis.pivot.toFixed(4)}</div>
+                        <div class="level support">S1: $${coin.pivotAnalysis.support.s1.toFixed(4)}</div>
+                        <div class="level support">S2: $${coin.pivotAnalysis.support.s2.toFixed(4)}</div>
+                        <div class="level support">S3: $${coin.pivotAnalysis.support.s3.toFixed(4)}</div>
+                    </div>
+                </div>
+                
+                <div class="next-target">
+                    <h4>الهدف التالي</h4>
+                    <div class="target-info">
+                        <div class="target-price">$${coin.pivotAnalysis.nextTarget.price.toFixed(4)}</div>
+                        <div class="target-type">${coin.pivotAnalysis.nextTarget.type}</div>
+                        <div class="target-probability">احتمالية: ${coin.pivotAnalysis.nextTarget.probability}%</div>
+                        <div class="target-distance">
+                            المسافة: ${coin.pivotAnalysis.distanceToNext.percentage.toFixed(2)}% 
+                            (${coin.pivotAnalysis.distanceToNext.direction})
+                        </div>
+                        <div class="time-estimate">الوقت المتوقع: ${coin.pivotAnalysis.distanceToNext.timeEstimate}</div>
+                    </div>
+                </div>
+                
+                <div class="recommendations">
+                    <h4>التوصيات</h4>
+                    <ul>
+                        ${coin.pivotAnalysis.recommendation.map(rec => `<li>${rec}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    ` : '';
+    
+    return `
+        <div class="coin-details">
+            <h2>${coin.symbol} - تفاصيل التحليل</h2>
+            
+            <div class="detail-section">
+                <h3>📊 معلومات السعر</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>السعر الحالي:</label>
+                        <span>$${coin.price.toFixed(4)}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>التغيير 24 ساعة:</label>
+                        <span class="${coin.change >= 0 ? 'positive' : 'negative'}">${coin.change.toFixed(2)}%</span>
+                    </div>
+                </div>
+            </div>
+            
+            ${pivotInfo}
+            
+            <div class="detail-section">
+                <h3>🎯 تحليل الإشارة</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>نوع الإشارة:</label>
+                        <span class="signal ${coin.signal === 'صعود' ? 'bullish' : coin.signal === 'هبوط' ? 'bearish' : 'neutral'}">${coin.signal}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>قوة الإشارة:</label>
+                        <span>${coin.strength.toFixed(1)}%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="warnings">
+                <p>هذا التحليل للأغراض التعليمية فقط</p>
+<p>يجب إجراء بحث إضافي قبل اتخاذ قرارات الاستثمار</p>
+                <p>الأسواق المالية تنطوي على مخاطر عالية</p>
+                <p>قد تتغير الإشارات بسرعة مع تحرك السوق</p>
+            </div>
+        </div>
+    `;
+}
+
+
+class EnhancedPivotPointsIndicator extends PivotPointsIndicator {
+
     constructor() {
         this.coins = [];
         this.timeframe = '4h';
@@ -1455,10 +1726,8 @@ class PivotPointsIndicator {
 }
 
 // تهيئة التطبيق عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', () => {
-    const app = new PivotPointsIndicator();
-    app.initializeApp();
-});
+const app = new PivotPointsIndicator();
+
 
 // إضافة مستمعات الأحداث العامة
 window.addEventListener('beforeunload', () => {
