@@ -3,43 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مؤشر نقاط الارتكاز - Binance</title>
+    <title>مؤشر نقاط الارتكاز والانعكاسات المفقودة - Binance</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>مؤشر نقاط الارتكاز والانعكاسات</h1>
+            <h1>🔄 مؤشر نقاط الارتكاز والانعكاسات المفقودة</h1>
+            <p class="subtitle">تحليل متقدم لنقاط الارتكاز العادية والمفقودة على منصة Binance</p>
+            
             <div class="controls">
-                <select id="timeframe">
-                    <option value="1h">1 ساعة</option>
-                    <option value="4h" selected>4 ساعات</option>
-                    <option value="1d">1 يوم</option>
-                </select>
+                <div class="control-group">
+                    <label for="timeframe">الإطار الزمني:</label>
+                    <select id="timeframe">
+                        <option value="1h">1 ساعة</option>
+                        <option value="4h" selected>4 ساعات</option>
+                        <option value="1d">1 يوم</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="pivotLength">طول نقطة الارتكاز:</label>
+                    <select id="pivotLength">
+                        <option value="20">20</option>
+                        <option value="30">30</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                
                 <div class="status">
                     <span id="lastUpdate">آخر تحديث: --</span>
-                    <div class="loading" id="loading">جاري التحديث...</div>
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        جاري التحديث...
+                    </div>
                 </div>
             </div>
         </header>
 
         <div class="stats">
-            <div class="stat-card">
-                <h3>إجمالي العملات</h3>
-                <span id="totalCoins">0</span>
+            <div class="stat-card total">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3>إجمالي العملات</h3>
+                    <span id="totalCoins">0</span>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3>إشارات صعود</h3>
-                <span id="bullishSignals" class="bullish">0</span>
+            <div class="stat-card bullish">
+                <div class="stat-icon">📈</div>
+                <div class="stat-content">
+                    <h3>إشارات صعود</h3>
+                    <span id="bullishSignals">0</span>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3>إشارات هبوط</h3>
-                <span id="bearishSignals" class="bearish">0</span>
+            <div class="stat-card bearish">
+                <div class="stat-icon">📉</div>
+                <div class="stat-content">
+                    <h3>إشارات هبوط</h3>
+                    <span id="bearishSignals">0</span>
+                </div>
+            </div>
+            <div class="stat-card neutral">
+                <div class="stat-icon">⚖️</div>
+                <div class="stat-content">
+                    <h3>متوسط القوة</h3>
+                    <span id="avgStrength">0%</span>
+                </div>
             </div>
         </div>
 
-        <div class="grid" id="cryptoGrid">
-            <!-- البطاقات ستظهر هنا -->
+        <div class="filter-section">
+            <h3>🔍 فلاتر التحليل</h3>
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="signalFilter">نوع الإشارة:</label>
+                    <select id="signalFilter">
+                        <option value="all">جميع الإشارات</option>
+                        <option value="صعود">إشارات الصعود فقط</option>
+                        <option value="هبوط">إشارات الهبوط فقط</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="strengthFilter">قوة الإشارة:</label>
+                    <select id="strengthFilter">
+                        <option value="0">جميع القوى</option>
+                        <option value="30">قوة أكبر من 30%</option>
+                        <option value="50">قوة أكبر من 50%</option>
+                        <option value="70">قوة أكبر من 70%</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="sortBy">ترتيب حسب:</label>
+                    <select id="sortBy">
+                        <option value="strength">القوة</option>
+                        <option value="change">التغيير</option>
+                        <option value="price">السعر</option>
+                        <option value="symbol">الرمز</option>
+                    </select>
+                </div>
+                
+                <button id="exportData" class="export-btn">
+                    📥 تصدير البيانات
+                </button>
+                
+                <button id="refreshData" class="refresh-btn">
+                    🔄 تحديث فوري
+                </button>
+            </div>
+        </div>
+
+        <div class="grid-container">
+            <div class="grid-header">
+                <h3>📋 نتائج التحليل - أفضل 30 عملة</h3>
+                <div class="view-toggle">
+                    <button id="gridView" class="active">🔲 شبكة</button>
+                    <button id="listView">📋 قائمة</button>
+                </div>
+            </div>
+            
+            <div class="grid" id="cryptoGrid">
+                <div class="loading-placeholder">
+                    <div class="loading-animation">
+                        <div class="loading-spinner"></div>
+                        <p>جاري تحليل العملات...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2024 مؤشر نقاط الارتكاز المتقدم - البيانات من Binance API</p>
+            <p>⚠️ هذا التطبيق للأغراض التعليمية فقط وليس نصيحة استثمارية</p>
+        </footer>
+    </div>
+
+    <!-- نافذة تفاصيل العملة -->
+    <div id="coinModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modalBody">
+                <!-- محتوى التفاصيل -->
+            </div>
         </div>
     </div>
 
