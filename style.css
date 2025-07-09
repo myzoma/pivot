@@ -28,17 +28,13 @@ body {
     line-height: 1.6;
 }
 
-.container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
-}
+
 
 /* تقليل عرض الصفحة مع مسافات جانبية */
 .container {
     max-width: 900px;
     margin: 0 auto;
-    padding: 0 40px;
+    padding: 20x;
 }
 
 /* تنسيق الهيدر */
